@@ -1,3 +1,7 @@
 [submodule "FAST_LIO_ROS2"]
 	path = FAST_LIO_ROS2
 	url = https://github.com/Ericsii/FAST_LIO_ROS2.git
+
+[submodule "kindr"]
+	path = kindr
+	url = https://github.com/ANYbotics/kindr.git
