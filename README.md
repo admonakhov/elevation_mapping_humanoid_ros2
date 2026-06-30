@@ -1,21 +1,23 @@
 # Elevation Mapping Humanoid ROS2
 
-ROS2 Humble workspace для построения elevation map для гуманоидного робота по данным LiDAR/IMU/odometry. В текущей версии основной стек `elevation_mapping` портирован на ROS2 и собирается через `colcon`.
+English documentation. Russian documentation is available in [README.ru.md](README.ru.md).
 
-Проект основан на:
+This is a ROS2 workspace for humanoid elevation mapping from LiDAR, IMU and odometry data. The main `elevation_mapping` stack has been ported to ROS2 and builds with `colcon`.
+
+The workspace is based on:
 
 - Robot-Centric Elevation Mapping: https://github.com/ANYbotics/elevation_mapping
-- FAST-LIO / FAST-LIO2 для LiDAR-inertial odometry
+- FAST-LIO / FAST-LIO2 for LiDAR-inertial odometry
 - Grid Map
 - kindr / kindr_ros
 
-## Текущий состав workspace
+## Workspace packages
 
-Активные ROS2 пакеты:
+Active ROS2 packages:
 
 ```text
 elevation_mapping
- elevation_mapping_demos
+elevation_mapping_demos
 fast_lio
 kindr
 kindr_msgs
@@ -24,111 +26,111 @@ message_logger
 pose_publisher
 ```
 
-Важно:
+Notes:
 
-- `elevation_mapping` уже собирается и запускается под ROS2 Humble.
-- `fast_lio` находится в директории `fast_lio_mid360` и требует `livox_ros_driver2`.
-- Старые ROS1/catkin-only пакеты и RViz1 plugins удалены.
-- `FAST_LIO_ROS2` удалён как дубликат; активный пакет FAST-LIO теперь только `fast_lio_mid360`.
+- `elevation_mapping` builds and runs on ROS2.
+- `fast_lio` lives in `fast_lio_mid360` and requires `livox_ros_driver2`.
+- ROS1/catkin-only packages and RViz1 plugins were removed from this workspace.
+- The old duplicate `FAST_LIO_ROS2` directory was removed. The active FAST-LIO package is `fast_lio_mid360`.
 
-## Требования
+## Requirements
 
-Проверено на:
+Expected environment:
 
-- Ubuntu с ROS2 Humble: `/opt/ros/humble`
+- Ubuntu with ROS2 installed under `/opt/ros/<ROS_DISTRO>`
 - `colcon`
-- системный Python `/usr/bin/python3`
+- system Python `/usr/bin/python3`
 
-Основные зависимости:
+Install common dependencies, replacing `<ROS_DISTRO>` with your target ROS2 distribution name:
 
 ```bash
 sudo apt update
 sudo apt install -y \
   python3-colcon-common-extensions \
   python3-rosdep \
-  ros-humble-grid-map \
-  ros-humble-grid-map-ros \
-  ros-humble-grid-map-msgs \
-  ros-humble-grid-map-visualization \
-  ros-humble-pcl-ros \
-  ros-humble-pcl-conversions \
-  ros-humble-tf2 \
-  ros-humble-tf2-ros \
-  ros-humble-tf2-eigen \
-  ros-humble-tf2-geometry-msgs \
-  ros-humble-rviz2
+  ros-<ROS_DISTRO>-grid-map \
+  ros-<ROS_DISTRO>-grid-map-ros \
+  ros-<ROS_DISTRO>-grid-map-msgs \
+  ros-<ROS_DISTRO>-grid-map-visualization \
+  ros-<ROS_DISTRO>-pcl-ros \
+  ros-<ROS_DISTRO>-pcl-conversions \
+  ros-<ROS_DISTRO>-tf2 \
+  ros-<ROS_DISTRO>-tf2-ros \
+  ros-<ROS_DISTRO>-tf2-eigen \
+  ros-<ROS_DISTRO>-tf2-geometry-msgs \
+  ros-<ROS_DISTRO>-rviz2
 ```
 
-Для `fast_lio` дополнительно нужен ROS2 драйвер Livox:
+`fast_lio` additionally requires the ROS2 Livox driver:
 
 ```text
 livox_ros_driver2
 ```
 
-Если `livox_ros_driver2` не установлен/не собран, собирай и проверяй `elevation_mapping` отдельно, без `fast_lio`.
+If `livox_ros_driver2` is not installed or not sourced, build and test `elevation_mapping` without `fast_lio`.
 
-## Важное про conda
+## Conda warning
 
-На этой машине conda может ломать ROS2-сборку:
+On conda-heavy machines, conda can break ROS2 builds:
 
-- ament может подхватить `/home/ant/miniconda3/bin/python3` вместо `/usr/bin/python3`;
-- `curl-config` из conda может привести к linker errors с `libcurl`, `gdal`, `netcdf`;
-- numpy из системного Python и conda Python могут конфликтовать.
+- ament may pick conda Python instead of `/usr/bin/python3`;
+- conda `curl-config` can cause linker errors with `libcurl`, `gdal` or `netcdf`;
+- system Python and conda Python numpy modules may conflict.
 
-Поэтому перед сборкой используй чистое ROS/system окружение:
+Use a clean ROS/system environment before building:
 
 ```bash
-source /opt/ros/humble/setup.bash
-export PATH=/opt/ros/humble/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+source /opt/ros/<ROS_DISTRO>/setup.bash
+export PATH=/opt/ros/<ROS_DISTRO>/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 export PYTHONPATH=/usr/lib/python3/dist-packages:${PYTHONPATH:-}
 ```
 
-И передавай CMake аргумент:
+Pass system Python explicitly when needed:
 
 ```bash
 -DPython3_EXECUTABLE=/usr/bin/python3
 ```
 
-## Сборка
+## Build
 
-### Важно про tests
+### Legacy tests
 
-В `kindr_ros` upstream test-файлы остались ROS1-style (`geometry_msgs/Pose.h`, `geometry_msgs/Quaternion.h`, `tf::Transform`). В этом workspace они отключены по умолчанию через CMake option:
+The upstream `kindr_ros` test files in this vendored tree are still ROS1-style (`geometry_msgs/Pose.h`, `geometry_msgs/Quaternion.h`, `tf::Transform`). They are disabled by default via:
 
 ```cmake
 KINDR_ROS_BUILD_LEGACY_TESTS=OFF
 ```
 
-Поэтому обычный `colcon build` больше не должен падать на ошибках вида:
+Therefore plain `colcon build` should not fail with:
 
 ```text
 fatal error: geometry_msgs/Pose.h: No such file or directory
 fatal error: geometry_msgs/Quaternion.h: No such file or directory
 ```
 
-Если нужно собрать только runtime без любых tests, можно дополнительно использовать:
+For a runtime-only build, you can additionally disable all tests:
 
 ```bash
 --cmake-args -DBUILD_TESTING=OFF
 ```
 
-Перейти в workspace:
+Go to the workspace:
 
 ```bash
-cd /home/ant/Robots/elevation_mapping/elevation_mapping_humanoid_ros2
+cd /path/to/elevation_mapping_humanoid_ros2
 ```
 
-Подготовить окружение:
+Prepare the environment:
 
 ```bash
-source /opt/ros/humble/setup.bash
-export PATH=/opt/ros/humble/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+source /opt/ros/<ROS_DISTRO>/setup.bash
+export PATH=/opt/ros/<ROS_DISTRO>/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 export PYTHONPATH=/usr/lib/python3/dist-packages:${PYTHONPATH:-}
 ```
 
-### Сборка только elevation_mapping стека
+### Build the elevation_mapping stack only
 
-Это основной проверенный вариант, не требующий `livox_ros_driver2`:
+This is the main verified build path and does not require `livox_ros_driver2`:
 
 ```bash
 colcon build \
@@ -138,20 +140,20 @@ colcon build \
     -DPython3_EXECUTABLE=/usr/bin/python3
 ```
 
-После сборки:
+After building:
 
 ```bash
 source install/setup.bash
 ```
 
-Проверка, что пакет виден ROS2:
+Check package discovery:
 
 ```bash
 ros2 pkg prefix elevation_mapping
 ros2 pkg executables elevation_mapping
 ```
 
-Ожидаемые executables:
+Expected executables:
 
 ```text
 elevation_mapping elevation_mapping
@@ -159,9 +161,9 @@ elevation_mapping get_grid_map_client
 elevation_mapping listener
 ```
 
-### Сборка всех ROS2 пакетов без fast_lio
+### Build all ROS2 packages except fast_lio
 
-Если `livox_ros_driver2` ещё не установлен:
+Use this when `livox_ros_driver2` is not installed yet:
 
 ```bash
 colcon build \
@@ -171,14 +173,14 @@ colcon build \
     -DPython3_EXECUTABLE=/usr/bin/python3
 ```
 
-### Сборка с fast_lio
+### Build with fast_lio
 
-Сначала собери и source `livox_ros_driver2`, затем:
+First build/source `livox_ros_driver2`, then build this workspace:
 
 ```bash
-source /opt/ros/humble/setup.bash
+source /opt/ros/<ROS_DISTRO>/setup.bash
 source /path/to/livox_ros_driver2/install/setup.bash
-cd /home/ant/Robots/elevation_mapping/elevation_mapping_humanoid_ros2
+cd /path/to/elevation_mapping_humanoid_ros2
 
 colcon build \
   --cmake-args \
@@ -186,31 +188,31 @@ colcon build \
     -DPython3_EXECUTABLE=/usr/bin/python3
 ```
 
-Если CMake выдаёт:
+If CMake reports:
 
 ```text
 Could not find livox_ros_driver2Config.cmake
 ```
 
-значит `livox_ros_driver2` не установлен или не был `source`-нут.
+then `livox_ros_driver2` is not installed or has not been sourced.
 
-## Запуск elevation_mapping
+## Run elevation_mapping
 
-Подготовить окружение:
+Prepare the environment:
 
 ```bash
-cd /home/ant/Robots/elevation_mapping/elevation_mapping_humanoid_ros2
-source /opt/ros/humble/setup.bash
+cd /path/to/elevation_mapping_humanoid_ros2
+source /opt/ros/<ROS_DISTRO>/setup.bash
 source install/setup.bash
 ```
 
-Запустить node напрямую:
+Run the node directly:
 
 ```bash
 ros2 run elevation_mapping elevation_mapping
 ```
 
-Для smoke-test без датчиков можно запустить на несколько секунд:
+Smoke-test without sensors:
 
 ```bash
 timeout 5s ros2 run elevation_mapping elevation_mapping \
@@ -219,7 +221,7 @@ timeout 5s ros2 run elevation_mapping elevation_mapping \
   -p fused_map_publishing_rate:=0.5
 ```
 
-Ожидаемые сообщения:
+Expected startup messages:
 
 ```text
 Elevation mapping node started.
@@ -227,42 +229,42 @@ Elevation map grid resized ...
 Successfully launched node.
 ```
 
-Предупреждение ниже нормально для запуска без входных point cloud источников:
+This warning is normal when no point cloud input sources are configured:
 
 ```text
 Not registering any callbacks, no input sources given. Did you configure the InputSourceManager?
 ```
 
-Для реального робота нужно настроить `input_sources` и sensor processor config под топики LiDAR/point cloud.
+For a real robot, configure `input_sources` and sensor processor YAML files for your LiDAR/point cloud topics.
 
-## Визуализация elevation map
+## Visualize the elevation map
 
-Проверка launch-файла:
+Check launch arguments:
 
 ```bash
 ros2 launch elevation_mapping visualization.launch.py --show-args
 ```
 
-Запуск визуализации:
+Start visualization:
 
 ```bash
 ros2 launch elevation_mapping visualization.launch.py
 ```
 
-Этот launch стартует `grid_map_visualization` для raw/fused карт с конфигами:
+This launch starts `grid_map_visualization` for raw/fused maps with:
 
 ```text
 elevation_mapping/config/visualization/raw.yaml
 elevation_mapping/config/visualization/fused.yaml
 ```
 
-Проверить топики:
+Check topics:
 
 ```bash
 ros2 topic list | grep -E 'elevation|grid|map'
 ```
 
-Основные ожидаемые топики:
+Expected topics include:
 
 ```text
 /elevation_map
@@ -270,33 +272,33 @@ ros2 topic list | grep -E 'elevation|grid|map'
 /visibility_cleanup_map
 ```
 
-Посмотреть один message:
+Inspect one message:
 
 ```bash
 ros2 topic echo /elevation_map --once
 ```
 
-## Запуск fast_lio для MID360
+## Run fast_lio for MID360
 
-Пакет `fast_lio` находится здесь:
+The `fast_lio` package is located in:
 
 ```text
 fast_lio_mid360
 ```
 
-Launch-файл:
+Launch file:
 
 ```text
 fast_lio_mid360/launch/mapping.launch.py
 ```
 
-Проверить аргументы:
+Check launch arguments:
 
 ```bash
 ros2 launch fast_lio mapping.launch.py --show-args
 ```
 
-Запуск MID360 config:
+Run MID360 config with RViz:
 
 ```bash
 ros2 launch fast_lio mapping.launch.py \
@@ -304,7 +306,7 @@ ros2 launch fast_lio mapping.launch.py \
   rviz:=true
 ```
 
-Без RViz:
+Run without RViz:
 
 ```bash
 ros2 launch fast_lio mapping.launch.py \
@@ -312,7 +314,7 @@ ros2 launch fast_lio mapping.launch.py \
   rviz:=false
 ```
 
-Доступные configs:
+Available configs:
 
 ```text
 fast_lio_mid360/config/mid360.yaml
@@ -324,67 +326,67 @@ fast_lio_mid360/config/velodyne.yaml
 fast_lio_mid360/config/velodyne_mr.yaml
 ```
 
-Важно: `fast_lio` не соберётся и не запустится без `livox_ros_driver2` для MID360.
+Important: `fast_lio` will not build or run for MID360 without `livox_ros_driver2`.
 
-## Типовой порядок запуска на роботе
+## Typical robot startup order
 
-В разных терминалах:
+Use separate terminals.
 
-### Терминал 1: Livox driver
+### Terminal 1: Livox driver
 
 ```bash
-source /opt/ros/humble/setup.bash
+source /opt/ros/<ROS_DISTRO>/setup.bash
 source /path/to/livox_ros_driver2/install/setup.bash
 ros2 launch livox_ros_driver2 msg_MID360_launch.py
 ```
 
-Проверить cloud topic:
+Check the cloud topic:
 
 ```bash
 ros2 topic list | grep -E 'livox|point|cloud'
 ros2 topic hz /livox/lidar
 ```
 
-### Терминал 2: FAST-LIO
+### Terminal 2: FAST-LIO
 
 ```bash
-cd /home/ant/Robots/elevation_mapping/elevation_mapping_humanoid_ros2
-source /opt/ros/humble/setup.bash
+cd /path/to/elevation_mapping_humanoid_ros2
+source /opt/ros/<ROS_DISTRO>/setup.bash
 source /path/to/livox_ros_driver2/install/setup.bash
 source install/setup.bash
 
 ros2 launch fast_lio mapping.launch.py config_file:=mid360.yaml rviz:=false
 ```
 
-Проверить odometry/map topics:
+Check odometry/map topics:
 
 ```bash
 ros2 topic list | grep -E 'odom|cloud|path|lio|map'
 ```
 
-### Терминал 3: elevation_mapping
+### Terminal 3: elevation_mapping
 
 ```bash
-cd /home/ant/Robots/elevation_mapping/elevation_mapping_humanoid_ros2
-source /opt/ros/humble/setup.bash
+cd /path/to/elevation_mapping_humanoid_ros2
+source /opt/ros/<ROS_DISTRO>/setup.bash
 source install/setup.bash
 
 ros2 run elevation_mapping elevation_mapping
 ```
 
-### Терминал 4: визуализация
+### Terminal 4: visualization
 
 ```bash
-cd /home/ant/Robots/elevation_mapping/elevation_mapping_humanoid_ros2
-source /opt/ros/humble/setup.bash
+cd /path/to/elevation_mapping_humanoid_ros2
+source /opt/ros/<ROS_DISTRO>/setup.bash
 source install/setup.bash
 
 ros2 launch elevation_mapping visualization.launch.py
 ```
 
-## Настройка под своего робота
+## Adapt to your robot
 
-Минимально проверить и настроить:
+Check and configure at least:
 
 1. TF tree:
 
@@ -393,7 +395,7 @@ ros2 run tf2_ros tf2_echo odom base_link
 ros2 run tf2_ros tf2_echo base_link livox_frame
 ```
 
-2. Frame IDs в configs:
+2. Frame IDs in configs:
 
 ```text
 elevation_mapping/config/robots/*.yaml
@@ -408,30 +410,30 @@ fast_lio_mid360/config/*.yaml
 ros2 topic list | grep -E 'cloud|points|livox|lidar'
 ```
 
-4. Если elevation_mapping пишет, что input sources не настроены, нужно добавить/исправить `input_sources` в YAML конфиге elevation_mapping под реальные топики point cloud.
+4. If `elevation_mapping` reports that input sources are not configured, add or fix `input_sources` in the elevation_mapping YAML config for the real point cloud topics.
 
-## Проверенные команды в этом workspace
+## Verified commands
 
-Сборка `elevation_mapping`:
+Build `elevation_mapping`:
 
 ```text
 Summary: 3 packages finished
 ```
 
-Проверка launch parse:
+Launch parse check:
 
 ```bash
 ros2 launch elevation_mapping visualization.launch.py --show-args
 ```
 
-Результат:
+Expected result:
 
 ```text
 Arguments:
   No arguments.
 ```
 
-Smoke run node:
+Smoke run:
 
 ```bash
 timeout 5s ros2 run elevation_mapping elevation_mapping \
@@ -440,30 +442,4 @@ timeout 5s ros2 run elevation_mapping elevation_mapping \
   -p fused_map_publishing_rate:=0.5
 ```
 
-Результат: node стартует, публикует topics, затем останавливается по timeout.
-
-## Цитирование
-
-Если используешь этот код в исследованиях, см. оригинальные работы:
-
-```bibtex
-@article{fankhauser_probabilistic_2018,
-  title = {Probabilistic Terrain Mapping for Mobile Robots With Uncertain Localization},
-  volume = {3},
-  url = {https://ieeexplore.ieee.org/document/8392399/},
-  doi = {10.1109/LRA.2018.2849506},
-  pages = {3019--3026},
-  journaltitle = {{IEEE} Robotics and Automation Letters},
-  author = {Fankhauser, Peter and Bloesch, Michael and Hutter, Marco},
-  date = {2018-10}
-}
-
-@misc{xu_fast-lio_2021,
-  title = {{FAST}-{LIO}: A Fast, Robust {LiDAR}-inertial Odometry Package by Tightly-Coupled Iterated Kalman Filter},
-  url = {http://arxiv.org/abs/2010.08196},
-  doi = {10.48550/arXiv.2010.08196},
-  publisher = {{arXiv}},
-  author = {Xu, Wei and Zhang, Fu},
-  date = {2021-04-14}
-}
-```
+The node starts, publishes topics, and then exits due to `timeout`.
