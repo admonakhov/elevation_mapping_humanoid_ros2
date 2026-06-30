@@ -32,7 +32,13 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_include_directories(include)
 ament_export_dependencies(Eigen3 geometry_msgs kindr tf2)
 
-if(BUILD_TESTING)
+# The upstream kindr_ros tests are still ROS1-style in this vendored tree
+# (they include geometry_msgs/Pose.h, tf::Transform, ros::init, etc.).  Do not
+# build them during a normal ROS2 colcon build; otherwise plain `colcon build`
+# fails even though the header-only runtime library is ROS2-compatible.
+option(KINDR_ROS_BUILD_LEGACY_TESTS "Build legacy ROS1-style kindr_ros tests" OFF)
+
+if(BUILD_TESTING AND KINDR_ROS_BUILD_LEGACY_TESTS)
   find_package(ament_cmake_gtest REQUIRED)
   ament_add_gtest(test_${PROJECT_NAME}
     test/test_main.cpp
