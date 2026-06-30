@@ -3,9 +3,16 @@ project(elevation_mapping_demos)
 
 find_package(ament_cmake REQUIRED)
 
-install(DIRECTORY config doc launch rviz sample_data
-  DESTINATION share/${PROJECT_NAME}
-)
+# Install only directories that exist in the ROS2 workspace.  The old ROS1 XML
+# launch directory was removed during the ROS2 cleanup, so installing a hardcoded
+# `launch` directory makes plain `colcon build` fail at install time.
+foreach(dir config doc rviz sample_data)
+  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
+    install(DIRECTORY ${dir}
+      DESTINATION share/${PROJECT_NAME}
+    )
+  endif()
+endforeach()
 
 install(PROGRAMS
   scripts/tf_to_pose_publisher.py
