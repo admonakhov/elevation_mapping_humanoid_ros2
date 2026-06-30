@@ -1,27 +1,15 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.8)
 project(kindr_msgs)
 
-find_package(catkin REQUIRED
-  COMPONENTS
-    geometry_msgs
-    message_generation
-    std_msgs
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/VectorAtPosition.msg"
+  DEPENDENCIES geometry_msgs std_msgs
 )
 
-add_message_files(
-  FILES
-    VectorAtPosition.msg
-)
-
-generate_messages(
-  DEPENDENCIES
-    geometry_msgs
-    std_msgs
-)
-
-catkin_package(
-  CATKIN_DEPENDS
-    geometry_msgs
-    message_runtime
-    std_msgs
-)
+ament_export_dependencies(rosidl_default_runtime)
+ament_package()

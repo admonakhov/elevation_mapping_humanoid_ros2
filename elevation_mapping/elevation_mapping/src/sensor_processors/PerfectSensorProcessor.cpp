@@ -24,13 +24,14 @@ namespace elevation_mapping {
  * Noiseless, perfect sensor.
  */
 
-PerfectSensorProcessor::PerfectSensorProcessor(ros::NodeHandle& nodeHandle, const SensorProcessorBase::GeneralParameters& generalParameters)
+PerfectSensorProcessor::PerfectSensorProcessor(std::shared_ptr<rclcpp::Node>& nodeHandle,
+                                              const SensorProcessorBase::GeneralParameters& generalParameters)
     : SensorProcessorBase(nodeHandle, generalParameters) {}
 
 PerfectSensorProcessor::~PerfectSensorProcessor() = default;
 
-bool PerfectSensorProcessor::readParameters() {
-  return SensorProcessorBase::readParameters();
+bool PerfectSensorProcessor::readParameters(std::string& inputSourceName) {
+  return SensorProcessorBase::readParameters(inputSourceName);
 }
 
 bool PerfectSensorProcessor::computeVariances(const PointCloudType::ConstPtr pointCloud,
@@ -58,7 +59,7 @@ bool PerfectSensorProcessor::computeVariances(const PointCloudType::ConstPtr poi
     // For every point in point cloud.
 
     // Preparation.
-    const auto& point{pointCloud->points[i]};
+    auto& point = pointCloud->points[i];
     Eigen::Vector3f pointVector(point.x, point.y, point.z);  // S_r_SP // NOLINT(cppcoreguidelines-pro-type-union-access)
     float heightVariance = 0.0;                              // sigma_p
 

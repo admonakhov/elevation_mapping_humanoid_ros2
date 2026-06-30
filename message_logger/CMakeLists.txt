@@ -145,6 +145,7 @@ else() # ROS version 2
 
 set(CMAKE_CXX_STANDARD 17)
 add_compile_options(-Wall -Wextra -Wpedantic -Werror=return-type)
+add_compile_definitions(ROS2_BUILD)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Import options and set dependencies accordingly.

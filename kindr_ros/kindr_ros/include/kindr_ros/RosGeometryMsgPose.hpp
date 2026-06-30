@@ -32,8 +32,8 @@
 #include <kindr/Core>
 
 // ros
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/Transform.h>
+#include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/transform.hpp>
 
 // kindr ros
 #include "kindr_ros/RosGeometryMsgPhysicalQuantities.hpp"
@@ -42,7 +42,7 @@
 namespace kindr_ros {
 
 template <typename PrimType_, typename Position_, typename Rotation_>
-inline static void convertFromRosGeometryMsg(const geometry_msgs::Pose& geometryPoseMsg,
+inline static void convertFromRosGeometryMsg(const geometry_msgs::msg::Pose& geometryPoseMsg,
                                              kindr::HomogeneousTransformation<PrimType_, Position_, Rotation_>& pose) {
   convertFromRosGeometryMsg(geometryPoseMsg.position, pose.getPosition());
 
@@ -56,7 +56,7 @@ inline static void convertFromRosGeometryMsg(const geometry_msgs::Pose& geometry
 
 template <typename PrimType_, typename Position_, typename Rotation_>
 inline static void convertToRosGeometryMsg(const kindr::HomogeneousTransformation<PrimType_, Position_, Rotation_>& pose,
-                                           geometry_msgs::Pose& geometryPoseMsg) {
+                                           geometry_msgs::msg::Pose& geometryPoseMsg) {
   convertToRosGeometryMsg(pose.getPosition(), geometryPoseMsg.position);
 
   // This is the definition of ROS Geometry pose.
@@ -67,7 +67,7 @@ inline static void convertToRosGeometryMsg(const kindr::HomogeneousTransformatio
 }
 
 template <typename PrimType_, typename Position_, typename Rotation_>
-inline static void convertFromRosGeometryMsg(const geometry_msgs::Transform& geometryTransformMsg,
+inline static void convertFromRosGeometryMsg(const geometry_msgs::msg::Transform& geometryTransformMsg,
                                              kindr::HomogeneousTransformation<PrimType_, Position_, Rotation_>& transformation) {
   convertFromRosGeometryMsg(geometryTransformMsg.translation, transformation.getPosition());
 
@@ -81,7 +81,7 @@ inline static void convertFromRosGeometryMsg(const geometry_msgs::Transform& geo
 
 template <typename PrimType_, typename Position_, typename Rotation_>
 inline static void convertToRosGeometryMsg(const kindr::HomogeneousTransformation<PrimType_, Position_, Rotation_>& transformation,
-                                           geometry_msgs::Transform& geometryTransformMsg) {
+                                           geometry_msgs::msg::Transform& geometryTransformMsg) {
   convertToRosGeometryMsg(transformation.getPosition(), geometryTransformMsg.translation);
 
   // This is the definition of ROS Geometry transform.

@@ -1,52 +1,34 @@
-cmake_minimum_required (VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.8)
 project(pose_publisher)
 
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  geometry_msgs
-  tf
-  )
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-###################################
-## catkin specific configuration ##
-###################################
-
-catkin_package()
-
-###########
-## Build ##
-###########
-
-include_directories(include
-  ${catkin_INCLUDE_DIRS}
-  )
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 add_executable(${PROJECT_NAME}
   src/pose_publisher.cpp
-  )
+)
 
-target_link_libraries(${PROJECT_NAME}
-  ${catkin_LIBRARIES}
-  )
-
-#############
-## Install ##
-#############
-
-install(
-  DIRECTORY launch
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-  )
-
+ament_target_dependencies(${PROJECT_NAME}
+  rclcpp
+  geometry_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+)
 
 install(TARGETS ${PROJECT_NAME}
-   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  DESTINATION lib/${PROJECT_NAME}
 )
 
-## Mark cpp header files for installation
-install(DIRECTORY include/${PROJECT_NAME}/
-   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-   FILES_MATCHING PATTERN "*.h"
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
 )
+
+ament_package()

@@ -10,7 +10,10 @@
 
 namespace elevation_mapping {
 
-PostprocessorPool::PostprocessorPool(std::size_t poolSize, ros::NodeHandle nodeHandle) {
+PostprocessorPool::PostprocessorPool(std::size_t poolSize, std::shared_ptr<rclcpp::Node>& nodeHandle) {
+  nodeHandle->declare_parameter("output_topic", std::string("elevation_map_raw_post"));
+  nodeHandle->declare_parameter("postprocessor_pipeline_name", rclcpp::ParameterValue(std::string("postprocessor_pipeline")));
+
   for (std::size_t i = 0; i < poolSize; ++i) {
     // Add worker to the collection.
     workers_.emplace_back(std::make_unique<PostprocessingWorker>(nodeHandle));
@@ -18,7 +21,7 @@ PostprocessorPool::PostprocessorPool(std::size_t poolSize, ros::NodeHandle nodeH
     availableServices_.push_back(i);
   }
 }
-
+ 
 PostprocessorPool::~PostprocessorPool() {
   // Force all threads to return from io_service::run().
   for (auto& worker : workers_) {
@@ -38,7 +41,7 @@ PostprocessorPool::~PostprocessorPool() {
 
 bool PostprocessorPool::runTask(const GridMap& gridMap) {
   // Get an available service id from the shared services pool in a mutually exclusive manner.
-  size_t serviceIndex{0};
+  size_t serviceIndex;
   {
     boost::lock_guard<boost::mutex> lock(availableServicesMutex_);
     if (availableServices_.empty()) {
@@ -52,7 +55,7 @@ bool PostprocessorPool::runTask(const GridMap& gridMap) {
   workers_.at(serviceIndex)->setDataBuffer(gridMap);
 
   // Create a task with the post-processor and dispatch it.
-  auto task = [this, serviceIndex] { wrapTask(serviceIndex); };
+  auto task = std::bind(&PostprocessorPool::wrapTask, this, serviceIndex);
   workers_.at(serviceIndex)->ioService().post(task);
   return true;
 }
@@ -65,7 +68,7 @@ void PostprocessorPool::wrapTask(size_t serviceIndex) {
   }
   // Suppress all exceptions.
   catch (const std::exception& exception) {
-    ROS_ERROR_STREAM("Postprocessor pipeline, thread " << serviceIndex << " experienced an error: " << exception.what());
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("my_logger"), "Postprocessor pipeline, thread " << serviceIndex << " experienced an error: " << exception.what());
   }
 
   // Task has finished, so increment count of available threads.

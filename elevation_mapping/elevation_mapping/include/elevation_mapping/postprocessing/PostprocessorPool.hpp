@@ -14,7 +14,7 @@
 #include <memory>
 #include <mutex>
 #include <thread>
-
+ 
 #include <grid_map_core/GridMap.hpp>
 
 #include "elevation_mapping/postprocessing/PostprocessingPipelineFunctor.hpp"
@@ -39,7 +39,7 @@ class PostprocessorPool {
    * @param poolSize The number of worker threads to allocate.
    * @param nodeHandle The node handle used to configure the task to run and to publish the finished tasks.
    */
-  PostprocessorPool(std::size_t poolSize, ros::NodeHandle nodeHandle);
+  PostprocessorPool(std::size_t poolSize, std::shared_ptr<rclcpp::Node>& nodeHandle);
 
   /**
    * @brief Destructor.

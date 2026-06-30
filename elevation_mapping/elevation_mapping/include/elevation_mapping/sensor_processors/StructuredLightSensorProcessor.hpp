@@ -22,7 +22,8 @@ class StructuredLightSensorProcessor : public SensorProcessorBase {
    * Constructor.
    * @param nodeHandle the ROS node handle.
    */
-  StructuredLightSensorProcessor(ros::NodeHandle& nodeHandle, const SensorProcessorBase::GeneralParameters& generalParameters);
+  StructuredLightSensorProcessor(std::shared_ptr<rclcpp::Node>& nodeHandle,
+    const SensorProcessorBase::GeneralParameters& generalParameters);
 
   /*!
    * Destructor.
@@ -34,7 +35,7 @@ class StructuredLightSensorProcessor : public SensorProcessorBase {
    * Reads and verifies the parameters.
    * @return true if successful.
    */
-  bool readParameters() override;
+  bool readParameters(std::string& inputSourceName) override;
 
   /*!
    * Computes the elevation map height variances for each point in a point cloud with the
@@ -44,7 +45,7 @@ class StructuredLightSensorProcessor : public SensorProcessorBase {
    * @param[out] variances the elevation map height variances.
    * @return true if successful.
    */
-  bool computeVariances(PointCloudType::ConstPtr pointCloud, const Eigen::Matrix<double, 6, 6>& robotPoseCovariance,
+  bool computeVariances(const PointCloudType::ConstPtr pointCloud, const Eigen::Matrix<double, 6, 6>& robotPoseCovariance,
                         Eigen::VectorXf& variances) override;
 
   /*!
@@ -52,6 +53,6 @@ class StructuredLightSensorProcessor : public SensorProcessorBase {
    * @param pointCloud the point cloud to filter.
    * @return true if successful.
    */
-  bool filterPointCloudSensorType(PointCloudType::Ptr pointCloud) override;
+  bool filterPointCloudSensorType(const PointCloudType::Ptr pointCloud) override;
 };
 } /* namespace elevation_mapping */

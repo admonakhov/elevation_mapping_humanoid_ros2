@@ -1,85 +1,70 @@
 /*
  * Copyright (c) 2014, Zhi Yan <zhi.yan@mines-douai.fr>
- * All rights reserved.
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University of California, Berkeley nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS "AS IS" AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE REGENTS AND CONTRIBUTORS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Ported to ROS 2.
  */
 
-#include <ros/ros.h>
-#include <tf/transform_listener.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <chrono>
+#include <memory>
+#include <string>
 
-int main(int argc, char **argv) {
-  ros::init(argc, argv, "node_pose_publisher");
-  ros::NodeHandle nh;
-  ros::NodeHandle private_nh("~");
+#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <tf2/exceptions.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 
-  double publish_frequency;
-  std::string map_frame, base_frame, topic_republish;
-  ros::Publisher pose_publisher;
+class PosePublisherNode : public rclcpp::Node {
+public:
+  PosePublisherNode()
+      : Node("node_pose_publisher"),
+        tf_buffer_(this->get_clock()),
+        tf_listener_(tf_buffer_) {
+    publish_frequency_ = declare_parameter<double>("publish_frequency", 10.0);
+    map_frame_ = declare_parameter<std::string>("map_frame", "map");
+    base_frame_ = declare_parameter<std::string>("base_frame", "base_link");
+    topic_republish_ = declare_parameter<std::string>("topic_republish", "pose");
 
-  private_nh.param<double>("publish_frequency", publish_frequency, 10);
-  private_nh.param<std::string>("map_frame", map_frame, "map");
-  private_nh.param<std::string>("base_frame", base_frame, "base_link");
-  private_nh.param<std::string>("topic_republish", topic_republish, "pose");
+    pose_publisher_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(topic_republish_, 1);
 
-  pose_publisher = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>(topic_republish, 1);
-
-  tf::TransformListener listener;
-  std::string tf_prefix = tf::getPrefixParam(private_nh);
-
-  ros::Rate rate(publish_frequency);
-  while(nh.ok()) {
-    tf::StampedTransform transform;
-    bool tf_ok = true;
-    try {
-      listener.lookupTransform(map_frame, base_frame, ros::Time(0), transform);
-    } catch(tf::TransformException ex) {
-      //ROS_ERROR("-------> %s", ex.what());
-      tf_ok = false;
-    }
-
-    if(tf_ok) {
-      geometry_msgs::PoseWithCovarianceStamped pose_stamped;
-      pose_stamped.header.stamp = ros::Time::now();
-      pose_stamped.header.frame_id = tf_prefix+"/"+map_frame;
-
-      pose_stamped.pose.pose.position.x = transform.getOrigin().getX();
-      pose_stamped.pose.pose.position.y = transform.getOrigin().getY();
-      pose_stamped.pose.pose.position.z = transform.getOrigin().getZ();
-
-      pose_stamped.pose.pose.orientation.x = transform.getRotation().getX();
-      pose_stamped.pose.pose.orientation.y = transform.getRotation().getY();
-      pose_stamped.pose.pose.orientation.z = transform.getRotation().getZ();
-      pose_stamped.pose.pose.orientation.w = transform.getRotation().getW();
-
-      pose_publisher.publish(pose_stamped);
-    }
-
-    rate.sleep();
+    const auto period = std::chrono::duration<double>(1.0 / std::max(publish_frequency_, 1e-3));
+    timer_ = create_wall_timer(std::chrono::duration_cast<std::chrono::nanoseconds>(period),
+                               std::bind(&PosePublisherNode::timerCallback, this));
   }
 
+private:
+  void timerCallback() {
+    geometry_msgs::msg::TransformStamped transform;
+    try {
+      transform = tf_buffer_.lookupTransform(map_frame_, base_frame_, tf2::TimePointZero);
+    } catch (const tf2::TransformException &ex) {
+      RCLCPP_DEBUG(get_logger(), "Could not transform %s to %s: %s",
+                   base_frame_.c_str(), map_frame_.c_str(), ex.what());
+      return;
+    }
+
+    geometry_msgs::msg::PoseWithCovarianceStamped pose_stamped;
+    pose_stamped.header.stamp = now();
+    pose_stamped.header.frame_id = map_frame_;
+    pose_stamped.pose.pose.position.x = transform.transform.translation.x;
+    pose_stamped.pose.pose.position.y = transform.transform.translation.y;
+    pose_stamped.pose.pose.position.z = transform.transform.translation.z;
+    pose_stamped.pose.pose.orientation = transform.transform.rotation;
+    pose_publisher_->publish(pose_stamped);
+  }
+
+  double publish_frequency_{};
+  std::string map_frame_;
+  std::string base_frame_;
+  std::string topic_republish_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_publisher_;
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;
+  rclcpp::TimerBase::SharedPtr timer_;
+};
+
+int main(int argc, char **argv) {
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<PosePublisherNode>());
+  rclcpp::shutdown();
   return 0;
 }
-
