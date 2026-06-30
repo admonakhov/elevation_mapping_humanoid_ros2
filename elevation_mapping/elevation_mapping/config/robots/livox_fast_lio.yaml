@@ -1,0 +1,32 @@
+/**:
+  ros__parameters:
+    # Full Livox pipeline:
+    #   /livox/lidar + /livox/imu -> fast_lio
+    #   fast_lio -> /cloud_registered_body + TF camera_init->body
+    #   pose_publisher -> /pose
+    #   elevation_mapping consumes /cloud_registered_body + /pose + TF
+    inputs: ['livox_cloud']
+    livox_cloud:
+      type: pointcloud
+      topic: /cloud_registered_body
+      queue_size: 10
+      publish_on_update: true
+      sensor_processor:
+        type: laser
+        # Livox/FAST-LIO output is already deskewed; keep a conservative height crop
+        # and simple laser noise model. Tune these after seeing the first map.
+        ignore_points_above: 2.0
+        ignore_points_below: -1.0
+        apply_voxelgrid_filter: true
+        voxelgrid_filter_size: 0.05
+        min_radius: 0.005
+        beam_angle: 0.0006
+        beam_constant: 0.001
+
+    map_frame_id: "camera_init"
+    robot_base_frame_id: "body"
+    robot_pose_with_covariance_topic: "/pose"
+    track_point_frame_id: "body"
+    track_point_x: 0.0
+    track_point_y: 0.0
+    track_point_z: 0.0

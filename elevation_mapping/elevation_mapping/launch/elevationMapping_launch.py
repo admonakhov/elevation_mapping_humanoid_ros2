@@ -12,11 +12,23 @@ def generate_launch_description():
     config_dir = os.path.join(share_dir, 'config')
     xacro_path = os.path.join(config_dir, 'robot.urdf.xacro')
     list_params = []
-    for filee in ["robots/ground_truth_demo.yaml","elevation_maps/long_range.yaml","sensor_processors/realsense_d435.yaml","postprocessing/postprocessor_pipeline.yaml"]:
+    for filee in ["robots/livox_fast_lio.yaml", "elevation_maps/long_range.yaml", "postprocessing/postprocessor_pipeline.yaml"]:
         list_params.append(os.path.join(config_dir, filee))
         
     return launch.LaunchDescription(
         [
+            launch_ros.actions.Node(
+                package='pose_publisher',
+                executable='pose_publisher',
+                name='pose_publisher',
+                output='screen',
+                parameters=[{
+                    'publish_frequency': 30.0,
+                    'map_frame': 'camera_init',
+                    'base_frame': 'body',
+                    'topic_republish': '/pose',
+                }],
+            ),
             launch_ros.actions.Node(
                 package='elevation_mapping',
                 executable='elevation_mapping',
