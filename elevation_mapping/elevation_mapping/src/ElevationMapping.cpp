@@ -11,7 +11,7 @@
 #include <cmath>
 #include <string>
 
-#include <grid_map_msgs/msg/grid_map.h>
+#include <grid_map_msgs/msg/grid_map.hpp>
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/conversions.h>
 #include <pcl/filters/voxel_grid.h>
@@ -22,10 +22,10 @@
 #include <grid_map_ros/grid_map_ros.hpp>
 #include <kindr/Core>
 #include <kindr_ros/kindr_ros.hpp>
-#include <geometry_msgs/msg/transform_stamped.h>
-#include <geometry_msgs/msg/point_stamped.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <geometry_msgs/msg/point_stamped.hpp>
 #include <tf2/LinearMath/Transform.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include "elevation_mapping/ElevationMap.hpp"
 #include "elevation_mapping/ElevationMapping.hpp"
