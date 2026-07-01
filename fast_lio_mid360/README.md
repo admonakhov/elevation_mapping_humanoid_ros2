@@ -120,10 +120,10 @@ Change `config_file` parameter to other yaml file under config directory as you 
 Launch livox ros driver. Use MID360 as an example.
 
 ```bash
-ros2 launch livox_ros_driver2 msg_MID360_launch.py
+ros2 launch livox_ros_driver2 rviz_MID360_launch.py
 ```
 
-- For livox serials, FAST-LIO only support the data collected by the ``` livox_lidar_msg.launch ``` since only its ``` livox_ros_driver2/CustomMsg ``` data structure produces the timestamp of each LiDAR point which is very important for the motion undistortion. ``` livox_lidar.launch ``` can not produce it right now.
+- This fork expects `/livox/lidar` to be `sensor_msgs/msg/PointCloud2`. For MID360 use the Livox driver PointCloud2 path (`rviz_MID360_launch.py` or `xfer_format: 0`), not the customized `livox_ros_driver2/CustomMsg` launch.
 - If you want to change the frame rate, please modify the **publish_freq** parameter in the [livox_lidar_msg.launch](https://github.com/Livox-SDK/livox_ros_driver/blob/master/livox_ros_driver2/launch/livox_lidar_msg.launch) of [Livox-ros-driver](https://github.com/Livox-SDK/livox_ros_driver2) before make the livox_ros_driver pakage.
 
 ### 3.2 For Livox serials with external IMU

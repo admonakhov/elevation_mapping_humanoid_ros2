@@ -337,7 +337,7 @@ fast_lio_mid360/config/velodyne_mr.yaml
 ```bash
 source /opt/ros/<ROS_DISTRO>/setup.bash
 source /path/to/livox_ros_driver2/install/setup.bash
-ros2 launch livox_ros_driver2 msg_MID360_launch.py
+ros2 launch livox_ros_driver2 rviz_MID360_launch.py
 ```
 
 Проверить cloud topic:
