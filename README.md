@@ -196,117 +196,243 @@ Could not find livox_ros_driver2Config.cmake
 
 then `livox_ros_driver2` is not installed or has not been sourced.
 
-## Run elevation_mapping
+## Run the humanoid MID360 pipeline
 
-Prepare the environment:
+This is the main launch path that mirrors the ROS1 `elevation_mapping_humanoid` workflow, but runs as ROS2 nodes.
+
+Workspace location on this machine:
 
 ```bash
-cd /path/to/elevation_mapping_humanoid_ros2
+cd /home/ant/Robots/elevation_mapping
+```
+
+Prepare the ROS2 environment:
+
+```bash
 source /opt/ros/<ROS_DISTRO>/setup.bash
 source install/setup.bash
 ```
 
-Run the node directly:
+For this machine with ROS2 Humble:
+
+```bash
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+```
+
+If `livox_ros_driver2` is built in a separate workspace, source it before this workspace:
+
+```bash
+source /opt/ros/<ROS_DISTRO>/setup.bash
+source /path/to/livox_ros_driver2/install/setup.bash
+source /home/ant/Robots/elevation_mapping/install/setup.bash
+```
+
+Start the full stack:
+
+```bash
+ros2 launch elevation_mapping livox_elevation_mapping.launch.py
+```
+
+Start without RViz:
+
+```bash
+ros2 launch elevation_mapping livox_elevation_mapping.launch.py rviz:=false
+```
+
+Start without FAST-LIO, for checking elevation mapping, pose publisher, pointcloud filter and visualization launch wiring:
+
+```bash
+ros2 launch elevation_mapping livox_elevation_mapping.launch.py \
+  start_fast_lio:=false \
+  rviz:=false
+```
+
+Start without grid map visualization nodes:
+
+```bash
+ros2 launch elevation_mapping livox_elevation_mapping.launch.py \
+  start_visualization:=false \
+  rviz:=false
+```
+
+Check launch arguments:
+
+```bash
+ros2 launch elevation_mapping livox_elevation_mapping.launch.py --show-args
+```
+
+Expected launch arguments:
+
+```text
+use_sim_time
+start_fast_lio
+start_filter
+start_visualization
+fast_lio_config
+rviz
+rviz_config
+```
+
+### What the launch starts
+
+`livox_elevation_mapping.launch.py` starts:
+
+```text
+fast_lio / fastlio_mapping          # node name: /laserMapping
+pc_filter.py                        # node name: /pointcloud_filter
+pose_publisher                      # node name: /node_pose_publisher
+elevation_mapping                   # node name: /elevation_mapping
+grid_map_visualization raw/fused    # optional, controlled by start_visualization
+rviz2                               # optional, controlled by rviz
+```
+
+### ROS1-equivalent data path
+
+The ROS2 pipeline keeps the same humanoid logic and topic flow as the ROS1 workspace:
+
+```text
+/livox/lidar + /livox/imu
+  -> fast_lio
+  -> /cloud_registered
+  -> pc_filter
+  -> /cloud_registered/filtered
+  -> elevation_mapping
+  -> /elevation_map, /elevation_map_raw_post, /visibility_cleanup_map
+
+fast_lio TF odom_torso -> torso_link
+  -> pose_publisher
+  -> /pose
+  -> elevation_mapping robot pose input
+```
+
+Important topics:
+
+```text
+Inputs:
+/livox/lidar
+/livox/imu
+
+FAST-LIO outputs:
+/cloud_registered
+/cloud_registered_body
+/fastlio_pc
+/fastlio_odom
+/Laser_map
+/path
+/tf
+
+Pointcloud filter:
+/cloud_registered -> /cloud_registered/filtered
+
+Elevation mapping:
+/pose
+/elevation_map
+/elevation_map_raw_post
+/visibility_cleanup_map
+```
+
+Important frames:
+
+```text
+odom_torso -> torso_link
+```
+
+The main configs for this path are:
+
+```text
+fast_lio_mid360/config/mid360.yaml
+elevation_mapping/elevation_mapping/config/robots/humanoid_fast_lio.yaml
+elevation_mapping/elevation_mapping/config/postprocessing/postprocessor_pipeline.yaml
+```
+
+### Smoke test
+
+Run the full ROS2 launch without RViz and without grid map visualization:
+
+```bash
+cd /home/ant/Robots/elevation_mapping
+source /opt/ros/<ROS_DISTRO>/setup.bash
+source install/setup.bash
+
+ros2 launch elevation_mapping livox_elevation_mapping.launch.py \
+  rviz:=false \
+  start_visualization:=false
+```
+
+In another terminal:
+
+```bash
+source /opt/ros/<ROS_DISTRO>/setup.bash
+source /home/ant/Robots/elevation_mapping/install/setup.bash
+
+ros2 node list | sort
+ros2 topic list | sort | grep -E '^/(cloud_registered|cloud_registered/filtered|fastlio_pc|fastlio_odom|elevation_map|pose|path|Laser_map|livox|tf|visibility_cleanup_map)'
+```
+
+Expected nodes:
+
+```text
+/elevation_mapping
+/laserMapping
+/node_pose_publisher
+/pointcloud_filter
+```
+
+Expected topics include:
+
+```text
+/cloud_registered
+/cloud_registered_body
+/cloud_registered/filtered
+/elevation_map
+/elevation_map_raw_post
+/fastlio_odom
+/fastlio_pc
+/Laser_map
+/livox/imu
+/livox/lidar
+/path
+/pose
+/tf
+/tf_static
+/visibility_cleanup_map
+```
+
+If there is no live MID360 data, the nodes still start, but FAST-LIO and elevation mapping will not publish meaningful map updates until `/livox/lidar`, `/livox/imu` and the TF chain are available.
+
+## Run individual components
+
+### Run elevation_mapping directly
+
+Direct node execution is useful only for low-level debugging because it does not load the humanoid YAML by itself:
 
 ```bash
 ros2 run elevation_mapping elevation_mapping
 ```
 
-Smoke-test without sensors:
+For the humanoid setup, prefer:
 
 ```bash
-timeout 5s ros2 run elevation_mapping elevation_mapping \
-  --ros-args \
-  -p enable_visibility_cleanup:=false \
-  -p fused_map_publishing_rate:=0.5
+ros2 launch elevation_mapping livox_elevation_mapping.launch.py
 ```
 
-Expected startup messages:
-
-```text
-Elevation mapping node started.
-Elevation map grid resized ...
-Successfully launched node.
-```
-
-This warning is normal when no point cloud input sources are configured:
-
-```text
-Not registering any callbacks, no input sources given. Did you configure the InputSourceManager?
-```
-
-For a real robot, configure `input_sources` and sensor processor YAML files for your LiDAR/point cloud topics.
-
-## Visualize the elevation map
-
-Check launch arguments:
-
-```bash
-ros2 launch elevation_mapping visualization.launch.py --show-args
-```
-
-Start visualization:
+### Run visualization only
 
 ```bash
 ros2 launch elevation_mapping visualization.launch.py
 ```
 
-This launch starts `grid_map_visualization` for raw/fused maps with:
+This starts `grid_map_visualization` for raw/fused maps with:
 
 ```text
 elevation_mapping/config/visualization/raw.yaml
 elevation_mapping/config/visualization/fused.yaml
 ```
 
-Check topics:
+It does not start RViz by itself. The full humanoid launch starts RViz when `rviz:=true`.
 
-```bash
-ros2 topic list | grep -E 'elevation|grid|map'
-```
-
-Expected topics include:
-
-```text
-/elevation_map
-/elevation_map_raw_post
-/visibility_cleanup_map
-```
-
-Inspect one message:
-
-```bash
-ros2 topic echo /elevation_map --once
-```
-
-## Run fast_lio for MID360
-
-The `fast_lio` package is located in:
-
-```text
-fast_lio_mid360
-```
-
-Launch file:
-
-```text
-fast_lio_mid360/launch/mapping.launch.py
-```
-
-Check launch arguments:
-
-```bash
-ros2 launch fast_lio mapping.launch.py --show-args
-```
-
-Run MID360 config with RViz:
-
-```bash
-ros2 launch fast_lio mapping.launch.py \
-  config_file:=mid360.yaml \
-  rviz:=true
-```
-
-Run without RViz:
+### Run FAST-LIO only
 
 ```bash
 ros2 launch fast_lio mapping.launch.py \
@@ -314,74 +440,52 @@ ros2 launch fast_lio mapping.launch.py \
   rviz:=false
 ```
 
-Available configs:
+`mid360.yaml` is configured for the humanoid pipeline:
 
 ```text
-fast_lio_mid360/config/mid360.yaml
-fast_lio_mid360/config/mid360_mr.yaml
-fast_lio_mid360/config/avia.yaml
-fast_lio_mid360/config/horizon.yaml
-fast_lio_mid360/config/ouster64.yaml
-fast_lio_mid360/config/velodyne.yaml
-fast_lio_mid360/config/velodyne_mr.yaml
+lid_topic: /livox/lidar
+imu_topic: /livox/imu
+cloud_deskewed_topic: /fastlio_pc
+odometry_topic: /fastlio_odom
+odom_frame: odom_torso
+body_frame: torso_link
 ```
-
-Important: `fast_lio` will not build or run for MID360 without `livox_ros_driver2`.
 
 ## Typical robot startup order
 
-Use separate terminals.
-
-### Terminal 1: Livox driver
+Use the full launch when possible:
 
 ```bash
+# Terminal 1: Livox driver, if it is not launched elsewhere.
 source /opt/ros/<ROS_DISTRO>/setup.bash
 source /path/to/livox_ros_driver2/install/setup.bash
 ros2 launch livox_ros_driver2 msg_MID360_launch.py
 ```
 
-Check the cloud topic:
-
 ```bash
-ros2 topic list | grep -E 'livox|point|cloud'
-ros2 topic hz /livox/lidar
-```
-
-### Terminal 2: FAST-LIO
-
-```bash
-cd /path/to/elevation_mapping_humanoid_ros2
+# Terminal 2: humanoid elevation mapping pipeline.
+cd /home/ant/Robots/elevation_mapping
 source /opt/ros/<ROS_DISTRO>/setup.bash
 source /path/to/livox_ros_driver2/install/setup.bash
 source install/setup.bash
-
-ros2 launch fast_lio mapping.launch.py config_file:=mid360.yaml rviz:=false
+ros2 launch elevation_mapping livox_elevation_mapping.launch.py
 ```
 
-Check odometry/map topics:
+Check live inputs:
 
 ```bash
-ros2 topic list | grep -E 'odom|cloud|path|lio|map'
+ros2 topic hz /livox/lidar
+ros2 topic hz /livox/imu
+ros2 run tf2_ros tf2_echo odom_torso torso_link
 ```
 
-### Terminal 3: elevation_mapping
+Check map outputs:
 
 ```bash
-cd /path/to/elevation_mapping_humanoid_ros2
-source /opt/ros/<ROS_DISTRO>/setup.bash
-source install/setup.bash
-
-ros2 run elevation_mapping elevation_mapping
-```
-
-### Terminal 4: visualization
-
-```bash
-cd /path/to/elevation_mapping_humanoid_ros2
-source /opt/ros/<ROS_DISTRO>/setup.bash
-source install/setup.bash
-
-ros2 launch elevation_mapping visualization.launch.py
+ros2 topic hz /cloud_registered
+ros2 topic hz /cloud_registered/filtered
+ros2 topic hz /pose
+ros2 topic hz /elevation_map
 ```
 
 ## Adapt to your robot
@@ -414,32 +518,69 @@ ros2 topic list | grep -E 'cloud|points|livox|lidar'
 
 ## Verified commands
 
-Build `elevation_mapping`:
+The following commands were verified on this machine with ROS2 Humble.
 
-```text
-Summary: 3 packages finished
-```
-
-Launch parse check:
+Build the current ROS2 humanoid stack:
 
 ```bash
-ros2 launch elevation_mapping visualization.launch.py --show-args
+cd /home/ant/Robots/elevation_mapping
+source /opt/ros/humble/setup.bash
+
+colcon build \
+  --packages-select fast_lio pose_publisher elevation_mapping_demos elevation_mapping \
+  --cmake-args -DBUILD_TESTING=OFF
 ```
 
 Expected result:
 
 ```text
-Arguments:
-  No arguments.
+Summary: 4 packages finished
 ```
 
-Smoke run:
+Check the full launch arguments:
 
 ```bash
-timeout 5s ros2 run elevation_mapping elevation_mapping \
-  --ros-args \
-  -p enable_visibility_cleanup:=false \
-  -p fused_map_publishing_rate:=0.5
+source /opt/ros/humble/setup.bash
+source /home/ant/Robots/elevation_mapping/install/setup.bash
+ros2 launch elevation_mapping livox_elevation_mapping.launch.py --show-args
 ```
 
-The node starts, publishes topics, and then exits due to `timeout`.
+Smoke launch without RViz and without visualization:
+
+```bash
+source /opt/ros/humble/setup.bash
+source /home/ant/Robots/elevation_mapping/install/setup.bash
+
+timeout 8s ros2 launch elevation_mapping livox_elevation_mapping.launch.py \
+  rviz:=false \
+  start_visualization:=false
+```
+
+Expected startup includes:
+
+```text
+process started: fastlio_mapping
+process started: pc_filter.py
+process started: pose_publisher
+process started: elevation_mapping
+Elevation mapping node started.
+Configured pointcloud:front @ /cloud_registered/filtered
+Filtering /cloud_registered -> /cloud_registered/filtered; target_frame=torso_link; z <= -0.5
+Successfully launched node.
+```
+
+`timeout` exit code `124` is expected for smoke tests because the launch is intentionally stopped after a few seconds.
+
+Verify discovered ROS2 executables:
+
+```bash
+ros2 pkg executables elevation_mapping_demos | sort
+ros2 pkg executables fast_lio | sort
+```
+
+Expected relevant executables:
+
+```text
+elevation_mapping_demos pc_filter.py
+fast_lio fastlio_mapping
+```
