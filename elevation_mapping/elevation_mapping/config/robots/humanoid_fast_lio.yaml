@@ -2,7 +2,7 @@ elevation_mapping:
   ros__parameters:
     # ROS2 equivalent of ROS1 elevation_mapping_demos/config/robots/simple_demo_robot.yaml.
     # Data path:
-    #   /livox/lidar + /livox/imu -> fast_lio
+    #   /utlidar/cloud_livox_mid360 + /utlidar/imu_livox_mid360 -> fast_lio
     #   fast_lio -> /cloud_registered + TF odom_torso -> torso_link
     #   pc_filter -> /cloud_registered/filtered
     #   pose_publisher -> /pose

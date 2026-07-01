@@ -779,8 +779,8 @@ public:
         this->declare_parameter<string>("map_file_path", "");
         this->declare_parameter<string>("odom_frame", "odom");
         this->declare_parameter<string>("body_frame", "lidar_link");
-        this->declare_parameter<string>("common.lid_topic", "/livox/lidar");
-        this->declare_parameter<string>("common.imu_topic", "/livox/imu");
+        this->declare_parameter<string>("common.lid_topic", "/utlidar/cloud_livox_mid360");
+        this->declare_parameter<string>("common.imu_topic", "/utlidar/imu_livox_mid360");
         this->declare_parameter<string>("common.cloud_deskewed_topic", "/cloud_deskewed");
         this->declare_parameter<string>("common.odometry_topic", "/odometry");
         this->declare_parameter<bool>("common.time_sync_en", false);
@@ -819,8 +819,8 @@ public:
         this->get_parameter_or<string>("map_file_path", map_file_path, "");
         this->get_parameter_or<string>("odom_frame", odom_frame, "odom");
         this->get_parameter_or<string>("body_frame", body_frame, "lidar_link");
-        this->get_parameter_or<string>("common.lid_topic", lid_topic, "/livox/lidar");
-        this->get_parameter_or<string>("common.imu_topic", imu_topic,"/livox/imu");
+        this->get_parameter_or<string>("common.lid_topic", lid_topic, "/utlidar/cloud_livox_mid360");
+        this->get_parameter_or<string>("common.imu_topic", imu_topic,"/utlidar/imu_livox_mid360");
         this->get_parameter_or<string>("common.cloud_deskewed_topic", cloud_deskewed_topic, "/cloud_deskewed");
         this->get_parameter_or<string>("common.odometry_topic", odometry_topic, "/odometry");
         this->get_parameter_or<bool>("common.time_sync_en", time_sync_en, false);
@@ -896,7 +896,7 @@ public:
         else
             cout << "~~~~"<<ROOT_DIR<<" doesn't exist" << endl;
 
-        /*** ROS subscribe initialization: /livox/lidar and all LiDAR inputs use standard sensor_msgs/msg/PointCloud2. ***/
+        /*** ROS subscribe initialization: /utlidar/cloud_livox_mid360 and all LiDAR inputs use standard sensor_msgs/msg/PointCloud2. ***/
         sub_pcl_pc_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(lid_topic, rclcpp::SensorDataQoS(), standard_pcl_cbk);
         sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>(imu_topic, 10, imu_cbk);
         pubLaserCloudFull_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/cloud_registered", 20);

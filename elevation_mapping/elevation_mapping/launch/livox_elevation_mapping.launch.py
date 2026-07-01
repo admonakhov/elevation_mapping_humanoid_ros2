@@ -32,11 +32,11 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'start_fast_lio',
             default_value='true',
-            description='Start fast_lio, which consumes /livox/lidar and /livox/imu.'),
+            description='Start fast_lio, which consumes /utlidar/cloud_livox_mid360 and /utlidar/imu_livox_mid360.'),
         DeclareLaunchArgument(
             'start_filter',
             default_value='true',
-            description='Start ROS2 port of pc_filter: /cloud_registered -> /cloud_registered/filtered.'),
+            description='Start ROS2 port of pc_filter: /cloud_registered_body -> /cloud_registered/filtered.'),
         DeclareLaunchArgument(
             'start_visualization',
             default_value='true',
@@ -68,7 +68,7 @@ def generate_launch_description():
             name='pointcloud_filter',
             parameters=[{
                 'distance_threshold': -0.5,
-                'input_topic': '/cloud_registered',
+                'input_topic': '/cloud_registered_body',
                 'output_topic': '/cloud_registered/filtered',
                 'target_frame': 'torso_link',
                 'use_sim_time': use_sim_time,

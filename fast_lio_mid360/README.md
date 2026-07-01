@@ -123,7 +123,7 @@ Launch livox ros driver. Use MID360 as an example.
 ros2 launch livox_ros_driver2 rviz_MID360_launch.py
 ```
 
-- This fork expects `/livox/lidar` to be `sensor_msgs/msg/PointCloud2`. For MID360 use the Livox driver PointCloud2 path (`rviz_MID360_launch.py` or `xfer_format: 0`), not the customized `livox_ros_driver2/CustomMsg` launch.
+- This fork expects `/utlidar/cloud_livox_mid360` to be `sensor_msgs/msg/PointCloud2`. For MID360 use the Livox driver PointCloud2 path (`rviz_MID360_launch.py` or `xfer_format: 0`), not the customized `livox_ros_driver2/CustomMsg` launch.
 - If you want to change the frame rate, please modify the **publish_freq** parameter in the [livox_lidar_msg.launch](https://github.com/Livox-SDK/livox_ros_driver/blob/master/livox_ros_driver2/launch/livox_lidar_msg.launch) of [Livox-ros-driver](https://github.com/Livox-SDK/livox_ros_driver2) before make the livox_ros_driver pakage.
 
 ### 3.2 For Livox serials with external IMU

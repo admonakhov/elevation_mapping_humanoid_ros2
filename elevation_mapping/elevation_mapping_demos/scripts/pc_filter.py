@@ -46,25 +46,47 @@ class PointCloudFilter(Node):
             f'z <= {self.distance_threshold}')
 
     def pointcloud_callback(self, msg: PointCloud2):
-        try:
-            transform = self.tf_buffer.lookup_transform(
-                self.target_frame,
-                msg.header.frame_id,
-                rclpy.time.Time.from_msg(msg.header.stamp),
-                timeout=self.lookup_timeout)
-        except TransformException as exc:
-            self.get_logger().debug(f'TF lookup failed: {exc}')
-            return
+        source_frame = msg.header.frame_id.lstrip('/')
+        target_frame = self.target_frame.lstrip('/')
+        if source_frame == target_frame:
+            transformed_msg = msg
+        else:
+            try:
+                transform = self.tf_buffer.lookup_transform(
+                    self.target_frame,
+                    msg.header.frame_id,
+                    rclpy.time.Time.from_msg(msg.header.stamp),
+                    timeout=self.lookup_timeout)
+            except TransformException as exc:
+                self.get_logger().warn(
+                    f'TF lookup failed for {msg.header.frame_id} -> {self.target_frame}: {exc}',
+                    throttle_duration_sec=2.0)
+                return
 
-        transformed_msg = do_transform_cloud(msg, transform)
+            transformed_msg = do_transform_cloud(msg, transform)
+
         points = self.pointcloud2_to_numpy(transformed_msg)
         filtered_points = points[points[:, 2] <= self.distance_threshold]
+        if points.size and filtered_points.size == 0:
+            self.get_logger().warn(
+                f'Filtered cloud is empty: input_points={len(points)}, '
+                f'z_range=[{points[:, 2].min():.3f}, {points[:, 2].max():.3f}], '
+                f'threshold={self.distance_threshold}',
+                throttle_duration_sec=2.0)
         filtered_msg = self.numpy_to_pointcloud2(filtered_points, transformed_msg.header)
         self.publisher.publish(filtered_msg)
 
     @staticmethod
     def pointcloud2_to_numpy(msg: PointCloud2) -> np.ndarray:
-        points = list(pc2.read_points(msg, field_names=('x', 'y', 'z'), skip_nans=True))
+        points = pc2.read_points(msg, field_names=('x', 'y', 'z'), skip_nans=True)
+        if isinstance(points, np.ndarray):
+            if points.size == 0:
+                return np.empty((0, 3), dtype=np.float32)
+            if points.dtype.names:
+                return np.column_stack((points['x'], points['y'], points['z'])).astype(np.float32)
+            return np.asarray(points, dtype=np.float32).reshape((-1, 3))
+
+        points = list(points)
         if not points:
             return np.empty((0, 3), dtype=np.float32)
         return np.asarray(points, dtype=np.float32).reshape((-1, 3))

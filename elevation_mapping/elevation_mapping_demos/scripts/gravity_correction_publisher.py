@@ -73,7 +73,7 @@ class GravityCorrectionPublisher:
         self.tf_broadcaster = tf2_ros.StaticTransformBroadcaster()
         
         # Subscribe to IMU data
-        self.imu_sub = rospy.Subscriber('/livox/imu', Imu, self.imu_callback)
+        self.imu_sub = rospy.Subscriber('/utlidar/imu_livox_mid360', Imu, self.imu_callback)
         self.gravity_queue = []
 
         # self.latest_accel = None

@@ -1,12 +1,12 @@
 common:
-    lid_topic:  "livox/lidar"
-    imu_topic:  "livox/imu"
+    lid_topic:  "/utlidar/cloud_livox_mid360"
+    imu_topic:  "/utlidar/imu_livox_mid360"
     cloud_deskewed_topic:  "deskew/cloud_deskewed"
     odometry_topic:  "mapping/odometry"
     time_sync_en: false         # ONLY turn on when external time synchronization is really not possible
 
 preprocess:
-    lidar_type: 4                # standard sensor_msgs/msg/PointCloud2 input on livox/lidar 
+    lidar_type: 4                # standard sensor_msgs/msg/PointCloud2 input on /utlidar/cloud_livox_mid360 
     scan_line: 4
     blind: 1
 

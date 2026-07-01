@@ -292,7 +292,7 @@ rviz2                               # optional, controlled by rviz
 The ROS2 pipeline keeps the same humanoid logic and topic flow as the ROS1 workspace:
 
 ```text
-/livox/lidar + /livox/imu
+/utlidar/cloud_livox_mid360 + /utlidar/imu_livox_mid360
   -> fast_lio
   -> /cloud_registered
   -> pc_filter
@@ -310,8 +310,8 @@ Important topics:
 
 ```text
 Inputs:
-/livox/lidar
-/livox/imu
+/utlidar/cloud_livox_mid360
+/utlidar/imu_livox_mid360
 
 FAST-LIO outputs:
 /cloud_registered
@@ -390,8 +390,8 @@ Expected topics include:
 /fastlio_odom
 /fastlio_pc
 /Laser_map
-/livox/imu
-/livox/lidar
+/utlidar/imu_livox_mid360
+/utlidar/cloud_livox_mid360
 /path
 /pose
 /tf
@@ -399,7 +399,7 @@ Expected topics include:
 /visibility_cleanup_map
 ```
 
-If there is no live MID360 data, the nodes still start, but FAST-LIO and elevation mapping will not publish meaningful map updates until `/livox/lidar`, `/livox/imu` and the TF chain are available.
+If there is no live MID360 data, the nodes still start, but FAST-LIO and elevation mapping will not publish meaningful map updates until `/utlidar/cloud_livox_mid360`, `/utlidar/imu_livox_mid360` and the TF chain are available.
 
 ## Run individual components
 
@@ -443,8 +443,8 @@ ros2 launch fast_lio mapping.launch.py \
 `mid360.yaml` is configured for the humanoid pipeline:
 
 ```text
-lid_topic: /livox/lidar
-imu_topic: /livox/imu
+lid_topic: /utlidar/cloud_livox_mid360
+imu_topic: /utlidar/imu_livox_mid360
 cloud_deskewed_topic: /fastlio_pc
 odometry_topic: /fastlio_odom
 odom_frame: odom_torso
@@ -474,8 +474,8 @@ ros2 launch elevation_mapping livox_elevation_mapping.launch.py
 Check live inputs:
 
 ```bash
-ros2 topic hz /livox/lidar
-ros2 topic hz /livox/imu
+ros2 topic hz /utlidar/cloud_livox_mid360
+ros2 topic hz /utlidar/imu_livox_mid360
 ros2 run tf2_ros tf2_echo odom_torso torso_link
 ```
 

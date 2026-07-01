@@ -344,7 +344,7 @@ ros2 launch livox_ros_driver2 rviz_MID360_launch.py
 
 ```bash
 ros2 topic list | grep -E 'livox|point|cloud'
-ros2 topic hz /livox/lidar
+ros2 topic hz /utlidar/cloud_livox_mid360
 ```
 
 ### Терминал 2: FAST-LIO

@@ -13,8 +13,8 @@
         body_frame: "torso_link"
 
         common:
-            lid_topic:  "/livox/lidar"
-            imu_topic:  "/livox/imu"
+            lid_topic:  "/utlidar/cloud_livox_mid360"
+            imu_topic:  "/utlidar/imu_livox_mid360"
             cloud_deskewed_topic: "/fastlio_pc"
             odometry_topic: "/fastlio_odom"
             time_sync_en: false         # ONLY turn on when external time synchronization is really not possible
@@ -22,7 +22,7 @@
                                         # This param will take effect no matter what time_sync_en is. So if the time offset is not known exactly, please set as 0.0
 
         preprocess:
-            lidar_type: 4                # 4 = MID360 from standard sensor_msgs/msg/PointCloud2 on /livox/lidar
+            lidar_type: 4                # 4 = MID360 from standard sensor_msgs/msg/PointCloud2 on /utlidar/cloud_livox_mid360
             scan_line:  4
             blind: 4.0
             timestamp_unit: 3

@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
     # Full Livox pipeline:
-    #   /livox/lidar + /livox/imu -> fast_lio
+    #   /utlidar/cloud_livox_mid360 + /utlidar/imu_livox_mid360 -> fast_lio
     #   fast_lio -> /cloud_registered_body + TF camera_init->body
     #   pose_publisher -> /pose
     #   elevation_mapping consumes /cloud_registered_body + /pose + TF
